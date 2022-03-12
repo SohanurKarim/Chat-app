@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:firebase_learn_14/widgets/pickers/user_image_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AuthForm extends StatefulWidget {
   // const AuthForm({Key? key}) : super(key: key);
@@ -10,6 +14,7 @@ class AuthForm extends StatefulWidget {
     String email,
     String password,
     String userName,
+    XFile? image,
     bool isLogin,
     BuildContext ctx,
   ) submitFn;
@@ -24,10 +29,25 @@ class _AuthFormState extends State<AuthForm> {
   var _userEmail = '';
   var _userName = '';
   var _userPassword = '';
+  XFile? _userImageFile;
+
+  _pickedImage(XFile? image) {
+    _userImageFile = image;
+  }
 
   void _trySubmit() {
     final isValid = _formkey.currentState!.validate();
     FocusScope.of(context).unfocus();
+
+    if (_userImageFile == null) {
+      Scaffold.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Please pick an image."),
+          backgroundColor: Theme.of(context).errorColor,
+        ),
+      );
+      return;
+    }
 
     if (isValid) {
       _formkey.currentState!.save();
@@ -39,8 +59,10 @@ class _AuthFormState extends State<AuthForm> {
           _userEmail.trim(),
           _userPassword.trim(),
           _userName.trim(),
+          _userImageFile,
           _isLogin,
-          context);
+          context
+      );
     }
   }
 
@@ -57,9 +79,10 @@ class _AuthFormState extends State<AuthForm> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(radius: 30,),
+                  if (!_isLogin) UserImagePicker(_pickedImage),
+                  // UserImagePicker(),
                   TextFormField(
-                    key: ValueKey('email'),
+                    key: const ValueKey('email'),
                     validator: (value) {
                       if (value!.isEmpty || !value.contains('@')) {
                         return 'Please enter a valid email address.';
@@ -109,25 +132,24 @@ class _AuthFormState extends State<AuthForm> {
                   const SizedBox(
                     height: 12,
                   ),
-                  if(widget.isLoading)
-                    CircularProgressIndicator(),
-                  if(!widget.isLoading)
-                  RaisedButton(
-                    child: Text(_isLogin ? 'Login' : 'Signup'),
-                    onPressed: _trySubmit,
-                  ),
-                  if(!widget.isLoading)
-                  FlatButton(
-                    textColor: Theme.of(context).primaryColor,
-                    onPressed: () {
-                      setState(() {
-                        _isLogin = !_isLogin;
-                      });
-                    },
-                    child: Text(_isLogin
-                        ? 'Ceate new account'
-                        : 'I already have an account'),
-                  )
+                  if (widget.isLoading) CircularProgressIndicator(),
+                  if (!widget.isLoading)
+                    RaisedButton(
+                      child: Text(_isLogin ? 'Login' : 'Signup'),
+                      onPressed: _trySubmit,
+                    ),
+                  if (!widget.isLoading)
+                    FlatButton(
+                      textColor: Theme.of(context).primaryColor,
+                      onPressed: () {
+                        setState(() {
+                          _isLogin = !_isLogin;
+                        });
+                      },
+                      child: Text(_isLogin
+                          ? 'Ceate new account'
+                          : 'I already have an account'),
+                    )
                 ],
               ),
             ),
